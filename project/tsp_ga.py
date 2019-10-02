@@ -1,4 +1,5 @@
 import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt
+from pulp import *
 
 data = pd.read_csv('FoodstuffTravelTimes.csv', index_col=0)
 data2 = pd.read_csv('FoodstuffLocations.csv', index_col=1)
@@ -197,12 +198,54 @@ for node in demand_nodes:
         stop_list.append(Location(lat=data2["Lat"][name], lon=data2["Long"][name], name=name, demand = 2))
         total_demand += stop_list[-1].demand
 
-    routes.append(genetic_algorithm(population=stop_list, pop_size=50, elite_size=5, mutation_rate=0.05, generations=100))
+    routes.append(genetic_algorithm(population=stop_list, pop_size=10, elite_size=5, mutation_rate=0.05, generations=100))
 
-plot_route(routes[0])
-plot_route(routes[1])
-plot_route(routes[2])
-plot_route(routes[3])
-plot_route(routes[4])
-plot_route(routes[5])
-plot_route(routes[6])
+
+variables = LpVariable.dicts("Route", [i for i in range(0, len(routes))], None, None, LpBinary)
+
+problem = LpProblem("VRP Testing", LpMinimize)
+problem += lpSum(variables)
+
+
+for location in demand_nodes:
+    testing = np.zeros(len(demand_nodes))
+
+    for i in range(0, len(variables)):
+        if location in [route.name for route in routes[i]]:
+            testing[i] = 1
+
+    problem += lpSum([testing[i] * variables[i] for i in variables]) >= 1
+
+problem.writeLP("testing.lp")
+problem.solve()
+
+print(f"Status: {LpStatus[problem.status]}")
+for var in problem.variables():
+    print(var.name, "=", var.varValue)
+
+print(f"Total Trucks: {value(problem.objective)}")
+
+for _, row in data2.iterrows():
+    plt.plot(row.Long, row.Lat, 'ko')
+
+
+total_time = 0.0
+
+for route_index in [1, 11, 13, 17, 39, 4, 7, 8]:
+    route = routes[route_index]
+    total_time += (Fitness(route).route_distance() + 600)
+    color = (random.random(), random.random(), random.random())
+    prev_lon = route[0].lon
+    prev_lat = route[0].lat
+
+    for i in range(1, len(route)):
+        plt.arrow(prev_lon, prev_lat, route[i].lon - prev_lon, route[i].lat - prev_lat, length_includes_head=True, ec=color, fc=color)
+        prev_lon = route[i].lon
+        prev_lat = route[i].lat
+
+    plt.arrow(prev_lon, prev_lat, route[0].lon - prev_lon, route[0].lat - prev_lat, length_includes_head=True, ec=color, fc=color)
+
+
+plt.show()
+
+print(total_time)
