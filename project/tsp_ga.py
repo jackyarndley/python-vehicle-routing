@@ -3,11 +3,12 @@ import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt
 data = pd.read_csv('FoodstuffTravelTimes.csv', index_col=0)
 data2 = pd.read_csv('FoodstuffLocations.csv', index_col=1)
 
-class City:
-    def __init__(self, lat, lon, name):
+class Location:
+    def __init__(self, lat, lon, name, demand):
         self.lat = lat
         self.lon = lon
         self.name = name
+        self.demand = demand
     
     def distance(self, city):
         return data[city.name][self.name]
@@ -16,7 +17,7 @@ class Fitness:
     def __init__(self, route):
         self.route = route
         self.distance = 0
-        self.fitness= 0.0
+        self.fitness = 0.0
     
     def route_distance(self):
         if self.distance ==0:
@@ -174,13 +175,13 @@ def plot_route(route):
 
     plt.show()
 
-warehouse_location = City(lat=data2["Lat"]["Warehouse"], lon=data2["Long"]["Warehouse"], name="Warehouse")
+warehouse_location = Location(lat=data2["Lat"]["Warehouse"], lon=data2["Long"]["Warehouse"], name="Warehouse", demand=0)
 demand_nodes = [name for name in data.columns if name not in ["Warehouse"]]
 
 routes = []
 
 for node in demand_nodes:
-    target_location = City(lat=data2["Lat"][node], lon=data2["Long"][node], name=node)
+    target_location = Location(lat=data2["Lat"][node], lon=data2["Long"][node], name=node, demand = 2)
     left_nodes = [name for name in demand_nodes if name not in [node]]
     stop_list = [warehouse_location, target_location]
     distance_results = {}
@@ -189,9 +190,12 @@ for node in demand_nodes:
     distances = sorted(distance_results.items(), key = operator.itemgetter(1))
 
     # while route is not up to capacity
-    for i, _ in distances[0:5]:
-        name = left_nodes[i]
-        stop_list.append(City(lat=data2["Lat"][name], lon=data2["Long"][name], name=name))
+    total_demand = target_location.demand
+    while total_demand <= 12:
+        index, _ = distances.pop(0)
+        name = left_nodes[index]
+        stop_list.append(Location(lat=data2["Lat"][name], lon=data2["Long"][name], name=name, demand = 2))
+        total_demand += stop_list[-1].demand
 
     routes.append(genetic_algorithm(population=stop_list, pop_size=50, elite_size=5, mutation_rate=0.05, generations=100))
 
