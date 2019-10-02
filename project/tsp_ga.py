@@ -139,19 +139,19 @@ def next_generation(current_gen, elite_size, mutation_rate):
 def genetic_algorithm(population, pop_size, elite_size, mutation_rate, generations):
     pop = initial_population(pop_size, population)
     print("Initial distance: " + str(1 / rank_routes(pop)[0][1]))
-    progress = []
-    progress.append(1 / rank_routes(pop)[0][1])
+    # progress = []
+    # progress.append(1 / rank_routes(pop)[0][1])
     
     for i in range(0, generations):
         pop = next_generation(pop, elite_size, mutation_rate)
-        progress.append(1 / rank_routes(pop)[0][1])
-        print(1 / rank_routes(pop)[0][1])
+        # progress.append(1 / rank_routes(pop)[0][1])
+        # print(1 / rank_routes(pop)[0][1])
     
-    plt.plot(progress)
-    plt.ylabel('Distance')
-    plt.xlabel('Generation')
-    plt.show()
-    plt.close()
+    # plt.plot(progress)
+    # plt.ylabel('Distance')
+    # plt.xlabel('Generation')
+    # plt.show()
+    # plt.close()
 
     print("Final distance: " + str(1 / rank_routes(pop)[0][1]))
     bestRouteIndex = rank_routes(pop)[0][0]
@@ -159,29 +159,46 @@ def genetic_algorithm(population, pop_size, elite_size, mutation_rate, generatio
     return bestRoute
 
 def plot_route(route):
+    for _, row in data2.iterrows():
+        plt.plot(row.Long, row.Lat, 'ko')
+
     prev_lon = route[0].lon
     prev_lat = route[0].lat
-    plt.plot(prev_lon, prev_lat, 'ko')
 
     for i in range(1, len(route)):
-        plt.plot(route[i].lon, route[i].lat, 'ko')
         plt.arrow(prev_lon, prev_lat, route[i].lon - prev_lon, route[i].lat - prev_lat, length_includes_head=True, ec='r', fc='r')
         prev_lon = route[i].lon
         prev_lat = route[i].lat
 
     plt.arrow(prev_lon, prev_lat, route[0].lon - prev_lon, route[0].lat - prev_lat, length_includes_head=True, ec='r', fc='r')
 
-
-    plt.plot(data2["Long"]["Warehouse"], data2["Lat"]["Warehouse"], 'bo')
-
     plt.show()
 
+warehouse_location = City(lat=data2["Lat"]["Warehouse"], lon=data2["Long"]["Warehouse"], name="Warehouse")
+demand_nodes = [name for name in data.columns if name not in ["Warehouse"]]
 
+routes = []
 
-stop_list = []
+for node in demand_nodes:
+    target_location = City(lat=data2["Lat"][node], lon=data2["Long"][node], name=node)
+    left_nodes = [name for name in demand_nodes if name not in [node]]
+    stop_list = [warehouse_location, target_location]
+    distance_results = {}
+    for i in range(0,len(left_nodes)):
+        distance_results[i] = data[left_nodes[i]][node]
+    distances = sorted(distance_results.items(), key = operator.itemgetter(1))
 
-for stop in data.columns:
-    stop_list.append(City(lat=data2["Lat"][stop], lon=data2["Long"][stop], name=stop))
+    # while route is not up to capacity
+    for i, _ in distances[0:5]:
+        name = left_nodes[i]
+        stop_list.append(City(lat=data2["Lat"][name], lon=data2["Long"][name], name=name))
 
-testing = genetic_algorithm(population=stop_list, pop_size=100, elite_size=20, mutation_rate=0.002, generations=1000)
-plot_route(testing)
+    routes.append(genetic_algorithm(population=stop_list, pop_size=50, elite_size=5, mutation_rate=0.05, generations=100))
+
+plot_route(routes[0])
+plot_route(routes[1])
+plot_route(routes[2])
+plot_route(routes[3])
+plot_route(routes[4])
+plot_route(routes[5])
+plot_route(routes[6])
