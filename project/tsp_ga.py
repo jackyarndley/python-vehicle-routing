@@ -1,8 +1,9 @@
-import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt
+import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt, math
 from pulp import *
 
 data = pd.read_csv('FoodstuffTravelTimes.csv', index_col=0)
 data2 = pd.read_csv('FoodstuffLocations.csv', index_col=1)
+data3 = pd.read_csv('weekdaydemand.csv', index_col=0)
 
 class Location:
     def __init__(self, lat, lon, name, demand):
@@ -140,7 +141,7 @@ def next_generation(current_gen, elite_size, mutation_rate):
 
 def genetic_algorithm(population, pop_size, elite_size, mutation_rate, generations):
     pop = initial_population(pop_size, population)
-    print("Initial distance: " + str(1 / rank_routes(pop)[0][1]))
+    # print("Initial distance: " + str(1 / rank_routes(pop)[0][1]))
     # progress = []
     # progress.append(1 / rank_routes(pop)[0][1])
     
@@ -155,7 +156,7 @@ def genetic_algorithm(population, pop_size, elite_size, mutation_rate, generatio
     # plt.show()
     # plt.close()
 
-    print("Final distance: " + str(1 / rank_routes(pop)[0][1]))
+    # print("Final distance: " + str(1 / rank_routes(pop)[0][1]))
     bestRouteIndex = rank_routes(pop)[0][0]
     bestRoute = pop[bestRouteIndex]
     return bestRoute
@@ -176,64 +177,96 @@ def plot_route(route):
 
     plt.show()
 
+def progress(iteration, max_iterations):
+    frac = iteration / max_iterations
+    # print(f'Progress: [{"#" * round(50 * frac) + "-" * round(50 * (1-frac))}] {100. * frac:.2f}% ({iteration}/{max_iterations})\r', end='')
+
 warehouse_location = Location(lat=data2["Lat"]["Warehouse"], lon=data2["Long"]["Warehouse"], name="Warehouse", demand=0)
 demand_nodes = [name for name in data.columns if name not in ["Warehouse"]]
 
 routes = []
 
+progress(0, len(demand_nodes) * 11)
+iterations = 0
 for node in demand_nodes:
-    target_location = Location(lat=data2["Lat"][node], lon=data2["Long"][node], name=node, demand = 2)
+    target_location = Location(lat=data2["Lat"][node], lon=data2["Long"][node], name=node, demand = data3.demand[node])
+
     left_nodes = [name for name in demand_nodes if name not in [node]]
-    stop_list = [warehouse_location, target_location]
+
     distance_results = {}
+
     for i in range(0,len(left_nodes)):
         distance_results[i] = data[left_nodes[i]][node]
     distances = sorted(distance_results.items(), key = operator.itemgetter(1))
 
-    # while route is not up to capacity
-    total_demand = target_location.demand
-    while total_demand <= 12:
-        index, _ = distances.pop(0)
-        name = left_nodes[index]
-        stop_list.append(Location(lat=data2["Lat"][name], lon=data2["Long"][name], name=name, demand = 2))
-        total_demand += stop_list[-1].demand
+    for i in range(1, 13):
+        stop_list = [warehouse_location, target_location]
+        
+        # while route is not up to capacity
+        total_demand = target_location.demand
+        j = 0
+        while total_demand <= i and j < len(left_nodes):
+            index = distances[j][0]
+            name = left_nodes[index]
+            if (total_demand + data3.demand[name]) <= i:
+                stop_list.append(Location(lat=data2["Lat"][name], lon=data2["Long"][name], name=name, demand = data3.demand[name]))
+                total_demand += stop_list[-1].demand
+            j += 1
 
-    routes.append(genetic_algorithm(population=stop_list, pop_size=10, elite_size=5, mutation_rate=0.05, generations=100))
+        routes.append(genetic_algorithm(population=stop_list, pop_size=20, elite_size=5, mutation_rate=0.05, generations=25))
+        iterations += 1
+        progress(iterations, len(demand_nodes) * 11)
 
 
 variables = LpVariable.dicts("Route", [i for i in range(0, len(routes))], None, None, LpBinary)
 
 problem = LpProblem("VRP Testing", LpMinimize)
-problem += lpSum(variables)
+
+coefficents = []
+
+for route in routes:
+    time = Fitness(route).route_distance()
+    time += (len(route) - 1) * 300
+    time /= 3600.0
+    
+    if time > 4.0:
+        coefficents.append(10000000.0)
+    else:
+        coefficents.append(math.ceil(time) * 150.0)
+
+problem += lpSum([coefficents[i] * variables[i] for i in variables])
 
 
 for location in demand_nodes:
-    testing = np.zeros(len(demand_nodes))
+    testing = np.zeros(len(variables))
 
     for i in range(0, len(variables)):
         if location in [route.name for route in routes[i]]:
             testing[i] = 1
 
-    problem += lpSum([testing[i] * variables[i] for i in variables]) >= 1
+    problem += lpSum([testing[i] * variables[i] for i in variables]) == 1
 
 problem.writeLP("testing.lp")
 problem.solve()
 
 print(f"Status: {LpStatus[problem.status]}")
-for var in problem.variables():
-    print(var.name, "=", var.varValue)
+# for var in problem.variables():
+#     print(var.name, "=", var.varValue)
 
-print(f"Total Trucks: {value(problem.objective)}")
+print(f"Total Cost: ${value(problem.objective)}")
 
-for _, row in data2.iterrows():
-    plt.plot(row.Long, row.Lat, 'ko')
+plt.style.use('ggplot')
+fig, ax1 = plt.subplots(figsize=(10, 5))
+
+for index, row in data2.iterrows():
+    ax1.plot(row.Long, row.Lat, 'ko')
+    ax1.annotate(f"{data3.demand[index] if index != 'Warehouse' else 0}, {index}", xy=(row.Long, row.Lat), xytext=(row.Long - 0.01, row.Lat + 0.003))
 
 
-total_time = 0.0
+chosen_routes = [int(route.name[6:]) for route in problem.variables() if route.varValue > 0.1]
 
-for route_index in [1, 11, 13, 17, 39, 4, 7, 8]:
+for route_index in chosen_routes:
     route = routes[route_index]
-    total_time += (Fitness(route).route_distance() + 600)
     color = (random.random(), random.random(), random.random())
     prev_lon = route[0].lon
     prev_lat = route[0].lat
@@ -243,9 +276,7 @@ for route_index in [1, 11, 13, 17, 39, 4, 7, 8]:
         prev_lon = route[i].lon
         prev_lat = route[i].lat
 
-    plt.arrow(prev_lon, prev_lat, route[0].lon - prev_lon, route[0].lat - prev_lat, length_includes_head=True, ec=color, fc=color)
+    ax1.arrow(prev_lon, prev_lat, route[0].lon - prev_lon, route[0].lat - prev_lat, length_includes_head=True, ec=color, fc=color)
 
 
 plt.show()
-
-print(total_time)
