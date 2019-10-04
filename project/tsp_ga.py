@@ -1,4 +1,4 @@
-import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt, math
+import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt
 from pulp import *
 
 data = pd.read_csv('FoodstuffTravelTimes.csv', index_col=0)
@@ -217,6 +217,8 @@ for node in demand_nodes:
         iterations += 1
         progress(iterations, len(demand_nodes) * 11)
 
+number_routes = len(routes)
+routes += routes
 
 variables = LpVariable.dicts("Route", [i for i in range(0, len(routes))], None, None, LpBinary)
 
@@ -230,9 +232,17 @@ for route in routes:
     time /= 3600.0
     
     if time > 4.0:
-        coefficents.append(10000000.0)
+        if len(coefficents) < number_routes:
+            # Cost per 4 hour segment
+            coefficents.append(1200 * ((time // 4) + 1))
+        else:
+            # Route should not be allowed
+            coefficents.append(1000000.0)
     else:
-        coefficents.append(math.ceil(time) * 150.0)
+        if len(coefficents) < number_routes:
+            coefficents.append(round(time, 1) * 150.0)
+        else:
+            coefficents.append(1200.0)
 
 problem += lpSum([coefficents[i] * variables[i] for i in variables])
 
@@ -246,12 +256,14 @@ for location in demand_nodes:
 
     problem += lpSum([testing[i] * variables[i] for i in variables]) == 1
 
+problem += lpSum([variables[i] for i in range(number_routes)]) <= 20
+
 problem.writeLP("testing.lp")
 problem.solve()
 
 print(f"Status: {LpStatus[problem.status]}")
-# for var in problem.variables():
-#     print(var.name, "=", var.varValue)
+for var in problem.variables():
+    print(var.name, "=", var.varValue)
 
 print(f"Total Cost: ${value(problem.objective)}")
 
