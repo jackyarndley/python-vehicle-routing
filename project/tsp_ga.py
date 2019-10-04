@@ -177,16 +177,43 @@ def plot_route(route):
 
     plt.show()
 
-def progress(iteration, max_iterations):
-    frac = iteration / max_iterations
-    # print(f'Progress: [{"#" * round(50 * frac) + "-" * round(50 * (1-frac))}] {100. * frac:.2f}% ({iteration}/{max_iterations})\r', end='')
+class Progress:
+    def __init__(self, max_iterations):
+        self.iteration = 0
+        self.max_iterations = max_iterations
+        print(f'\nProgress: [{"#" * round(50 * 0) + "-" * round(50 * (1-0))}] {100. * 0:.2f}% ({self.iteration}/{self.max_iterations})\r', end='')
+        
+    def increment(self):
+        self.iteration += 1
+        frac = self.iteration / self.max_iterations
+        print(f'Progress: [{"#" * round(50 * frac) + "-" * round(50 * (1-frac))}] {100. * frac:.2f}% ({self.iteration}/{self.max_iterations})\r', end='')
+
+def gen_route(max_demand, route_locations, distances, left_nodes):
+    # while route is not up to capacity
+    total_demand = route_locations[1].demand
+    j = 0
+    while total_demand < max_demand and j < len(left_nodes):
+        location_index = distances[j]
+        location_name = left_nodes[location_index]
+        location_demand = data3.demand[location_name]
+        if (total_demand + location_demand) <= max_demand:
+            route_locations.append(Location(lat=data2["Lat"][location_name], lon=data2["Long"][location_name], name=location_name, demand = location_demand))
+            total_demand += route_locations[-1].demand
+        j += 1
+
+    route = genetic_algorithm(population=route_locations, pop_size=20, elite_size=5, mutation_rate=0.05, generations=25)
+    if total_demand > 12:
+        print(f"ERROR: {total_demand} greater than {max_demand}!")
+    progress.increment()
+
+    return route
 
 warehouse_location = Location(lat=data2["Lat"]["Warehouse"], lon=data2["Long"]["Warehouse"], name="Warehouse", demand=0)
 demand_nodes = [name for name in data.columns if name not in ["Warehouse"]]
 
 routes = []
 
-progress(0, len(demand_nodes) * 11)
+progress = Progress(len(demand_nodes) * 14)
 iterations = 0
 for node in demand_nodes:
     target_location = Location(lat=data2["Lat"][node], lon=data2["Long"][node], name=node, demand = data3.demand[node])
@@ -198,27 +225,20 @@ for node in demand_nodes:
     for i in range(0,len(left_nodes)):
         distance_results[i] = data[left_nodes[i]][node]
     distances = sorted(distance_results.items(), key = operator.itemgetter(1))
+    distances = [i[0] for i in distances]
+    
+    routes.append(gen_route(1, [warehouse_location, target_location], distances, left_nodes))
+    routes.append(gen_route(12, [warehouse_location, target_location], distances, left_nodes))
 
-    for i in range(1, 13):
-        stop_list = [warehouse_location, target_location]
-        
-        # while route is not up to capacity
-        total_demand = target_location.demand
-        j = 0
-        while total_demand <= i and j < len(left_nodes):
-            index = distances[j][0]
-            name = left_nodes[index]
-            if (total_demand + data3.demand[name]) <= i:
-                stop_list.append(Location(lat=data2["Lat"][name], lon=data2["Long"][name], name=name, demand = data3.demand[name]))
-                total_demand += stop_list[-1].demand
-            j += 1
+    for _i in range(12):
+        distances[:6] = np.random.permutation(distances[:6])
+        routes.append(gen_route(12, [warehouse_location, target_location], distances, left_nodes))
 
-        routes.append(genetic_algorithm(population=stop_list, pop_size=20, elite_size=5, mutation_rate=0.05, generations=25))
-        iterations += 1
-        progress(iterations, len(demand_nodes) * 11)
+
+
 
 number_routes = len(routes)
-routes += routes
+routes.extend(routes)
 
 variables = LpVariable.dicts("Route", [i for i in range(0, len(routes))], None, None, LpBinary)
 
