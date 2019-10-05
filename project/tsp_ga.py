@@ -1,4 +1,4 @@
-import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt
+import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt, itertools
 from pulp import *
 
 data = pd.read_csv('FoodstuffTravelTimes.csv', index_col=0)
@@ -21,6 +21,12 @@ class Fitness:
         self.distance = 0
         self.fitness = 0.0
     
+    def route_demand(self):
+        demand = 0
+        for location in self.route:
+            demand += location.demand
+        return demand
+
     def route_distance(self):
         if self.distance ==0:
             path_distance = 0
@@ -213,7 +219,7 @@ demand_nodes = [name for name in data.columns if name not in ["Warehouse"]]
 
 routes = []
 
-progress = Progress(len(demand_nodes) * 14)
+progress = Progress(len(demand_nodes) * 12 * 24)
 iterations = 0
 for node in demand_nodes:
     target_location = Location(lat=data2["Lat"][node], lon=data2["Long"][node], name=node, demand = data3.demand[node])
@@ -226,15 +232,13 @@ for node in demand_nodes:
         distance_results[i] = data[left_nodes[i]][node]
     distances = sorted(distance_results.items(), key = operator.itemgetter(1))
     distances = [i[0] for i in distances]
+
+    permutations = list(itertools.permutations(distances[:4]))
     
-    routes.append(gen_route(1, [warehouse_location, target_location], distances, left_nodes))
-    routes.append(gen_route(12, [warehouse_location, target_location], distances, left_nodes))
-
-    for _i in range(12):
-        distances[:6] = np.random.permutation(distances[:6])
-        routes.append(gen_route(12, [warehouse_location, target_location], distances, left_nodes))
-
-
+    for demand in range(1, 13):
+        for permutation in permutations:
+            distances[:4] = permutation
+            routes.append(gen_route(demand, [warehouse_location, target_location], distances, left_nodes))
 
 
 number_routes = len(routes)
@@ -248,7 +252,7 @@ coefficents = []
 
 for route in routes:
     time = Fitness(route).route_distance()
-    time += (len(route) - 1) * 300
+    time += Fitness(route).route_demand() * 300
     time /= 3600.0
     
     if time > 4.0:
@@ -282,8 +286,8 @@ problem.writeLP("testing.lp")
 problem.solve()
 
 print(f"Status: {LpStatus[problem.status]}")
-for var in problem.variables():
-    print(var.name, "=", var.varValue)
+# for var in problem.variables():
+#     print(var.name, "=", var.varValue)
 
 print(f"Total Cost: ${value(problem.objective)}")
 
@@ -311,4 +315,5 @@ for route_index in chosen_routes:
     ax1.arrow(prev_lon, prev_lat, route[0].lon - prev_lon, route[0].lat - prev_lat, length_includes_head=True, ec=color, fc=color)
 
 
+plt.savefig("plot1.png", dpi = 300, bbox_inches='tight')
 plt.show()
