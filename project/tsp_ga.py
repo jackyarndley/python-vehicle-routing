@@ -282,6 +282,7 @@ for location in demand_nodes:
 
 problem += lpSum([variables[i] for i in range(number_routes)]) <= 20
 
+print("\nSolving Linear Program...")
 problem.writeLP("testing.lp")
 problem.solve()
 
