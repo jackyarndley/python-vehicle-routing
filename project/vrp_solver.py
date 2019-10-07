@@ -1,9 +1,9 @@
 import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt, itertools
 from pulp import *
 
-data = pd.read_csv('FoodstuffTravelTimes.csv', index_col=0)
-data2 = pd.read_csv('FoodstuffLocations.csv', index_col=1)
-data3 = pd.read_csv('weekdaydemand.csv', index_col=0)
+data = pd.read_csv('data/FoodstuffTravelTimes.csv', index_col=0)
+data2 = pd.read_csv('data/FoodstuffLocations.csv', index_col=1)
+data3 = pd.read_csv('data/weekdaydemand.csv', index_col=0)
 
 class Location:
     def __init__(self, lat, lon, name, demand):
