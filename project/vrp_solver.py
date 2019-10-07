@@ -292,8 +292,18 @@ print(f"Status: {LpStatus[problem.status]}")
 print(f"Total Cost: ${value(problem.objective)}")
 
 plt.style.use('ggplot')
-fig, ax1 = plt.subplots(figsize=(10, 5))
+fig, ax1 = plt.subplots(figsize=(30, 20))
 
 chosen_routes = [int(route.name.split("_")[1]) for route in problem.variables() if route.varValue > 0.1]
+chosen_routes.sort()
+
+print(f"Chosen Routes:")
+for route_index in chosen_routes:
+    route_locations = [location.name for location in routes[route_index].route]
+    warehouse_index = route_locations.index('Warehouse')
+    route_path = route_locations[warehouse_index:] + route_locations[:warehouse_index] + ['Warehouse']
+    route_type = 'leased' if route_index >= total_routes else 'default'
+
+    print(f"type: {route_type:>7}, cost: {'$' + str(int(coefficents[route_index])):>5}, path: {' -> '.join(route_path)}")
 
 plot_routes(routes, chosen_routes)
