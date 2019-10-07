@@ -248,25 +248,9 @@ variables = LpVariable.dicts("Route", [i for i in range(0, len(routes))], None, 
 
 problem = LpProblem("VRP Testing", LpMinimize)
 
-coefficents = []
 
-for route in routes:
-    time = Fitness(route).route_distance()
-    time += Fitness(route).route_demand() * 300
-    time /= 3600.0
-    
-    if time > 4.0:
-        if len(coefficents) < number_routes:
-            # Cost per 4 hour segment
-            coefficents.append(1200 * ((time // 4) + 1))
-        else:
-            # Route should not be allowed
-            coefficents.append(1000000.0)
-    else:
-        if len(coefficents) < number_routes:
-            coefficents.append(round(time, 1) * 150.0)
-        else:
-            coefficents.append(1200.0)
+
+
 
 problem += lpSum([coefficents[i] * variables[i] for i in variables])
 
@@ -290,10 +274,9 @@ print(f"Status: {LpStatus[problem.status]}")
 # for var in problem.variables():
 #     print(var.name, "=", var.varValue)
 
-print(f"Total Cost: ${value(problem.objective)}")
 
-plt.style.use('ggplot')
-fig, ax1 = plt.subplots(figsize=(10, 5))
+
+
 
 for index, row in data2.iterrows():
     ax1.plot(row.Long, row.Lat, 'ko')
