@@ -60,6 +60,10 @@ class Route:
         self.fitness = 1 / float(self.calc_distance())
         return self.fitness
 
+    def list_path(self):
+        path = [[location.lon, location.lat] for location in self.route]
+        return path + [path[0]]
+
 class Progress:
     def __init__(self, max_iterations, title):
         self.iteration = 0
@@ -256,22 +260,43 @@ def plot_routes_basic(routes, chosen_routes):
 def plot_routes_advanced(routes, chosen_routes):
     m = folium.Map(location=[warehouse_location.lat, warehouse_location.lon], zoom_start=11)
 
-    folium.Marker([warehouse_location.lat, warehouse_location.lon], popup = warehouse_location.name, icon = folium.Icon(color ='black')).add_to(m)
+    colours = {
+        "New World": "red",
+        "Pak 'n Save": "orange",
+        "Four Square": "green",
+        "Fresh Collective": "blue"
+    }
+
+    folium.Marker([warehouse_location.lat, warehouse_location.lon], popup = warehouse_location.name, icon = folium.Icon(color ='black', prefix='fa', icon='industry')).add_to(m)
 
     for location in demand_locations:
-        folium.Marker([location.lat, location.lon], popup = location.name, icon = folium.Icon(color ='red')).add_to(m)
+        folium.Marker([location.lat, location.lon], popup = location.name, icon = folium.Icon(color=colours[data2["Type"][location.name]], prefix='fa', icon='shopping-cart')).add_to(m)
 
     client = ors.Client(key=ORS_KEY)
 
     for route_index in chosen_routes:
         current_route = routes[route_index]
 
-        visual_route = client.directions()
+        time = current_route.calc_distance()
+        time += current_route.calc_demand() * 300
+        time /= 3600.0
 
+        color = f'#{"".join(random.choice("0123456789ABCDEF") for i in range(6))}'
 
+        visual_route = client.directions(
+            coordinates = current_route.list_path(),
+            profile = 'driving-hgv',
+            format = 'geojson',
+            validate = True
+        )
 
-
-
+        folium.PolyLine(
+            locations = [list(reversed(coord)) for coord in visual_route['features'][0]['geometry']['coordinates']],
+            tooltip = f'{time:.1f}h ${coefficents[route_index]}',
+            color = color,
+            opacity = 0.75,
+            weight = 5
+        ).add_to(m)
 
     m.save("routes.html")
     return
@@ -319,7 +344,7 @@ print(f"Status: {LpStatus[problem.status]}")
 print(f"Total Cost: ${value(problem.objective)}")
 
 plt.style.use('ggplot')
-fig, ax1 = plt.subplots(figsize=(30, 20))
+fig, ax1 = plt.subplots(figsize=(20, 15))
 
 chosen_routes = [int(route.name.split("_")[1]) for route in problem.variables() if route.varValue > 0.1]
 chosen_routes.sort()
