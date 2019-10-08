@@ -1,6 +1,6 @@
 import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt, itertools
 from pulp import *
-import folium, openrouteservice as ors, math as math
+import folium, openrouteservice as ors, math as math, time
 
 data = pd.read_csv('data/FoodstuffTravelTimes.csv', index_col=0)
 data2 = pd.read_csv('data/FoodstuffLocations.csv', index_col=1)
@@ -69,12 +69,13 @@ class Progress:
         self.iteration = 0
         self.max_iterations = max_iterations
         self.title = title
-        print(f'\n{self.title}: [{"-" * 50}] {0:.2f}% ({self.iteration}/{self.max_iterations})\r', end='')
+        self.start_time = time.time()
+        print(f'\n{self.title}: [{"-" * 50}] {0:.2f}% ({self.iteration}/{self.max_iterations}) {0:.2f}s\r', end='')
         
     def increment(self):
         self.iteration += 1
         frac = self.iteration / self.max_iterations
-        print(f'{self.title}: [{"#" * int(round(50 * frac)) + "-" * int(round(50 * (1-frac)))}] {100. * frac:.2f}% ({self.iteration}/{self.max_iterations})\r', end='')
+        print(f'{self.title}: [{"#" * int(round(50 * frac)) + "-" * int(round(50 * (1-frac)))}] {100. * frac:.2f}% ({self.iteration}/{self.max_iterations}) {time.time() - self.start_time:.2f}s\r', end='')
 
 def generate_population(size, locations):
     population = []
@@ -112,6 +113,7 @@ def generate_mating_pool(population, selection_results):
         mating_pool.append(population[index])
     return mating_pool
 
+# TODO this needs to be optimised and changed around a bit
 def breed(parent1, parent2):
     child = []
     childP1 = []
@@ -192,7 +194,8 @@ def generate_route(maximum_capacity, current_locations, distances, remaining_loc
             total_demand += current_locations[-1].demand
         j += 1
 
-    return genetic_algorithm(current_locations, 20, 5, 0.05, 25)
+    # Current settings are testing to make the algorithm go faster - at the moment there is no mutation
+    return genetic_algorithm(current_locations, 5, 2, 0.0, 5)
 
 def generate_routes(demand_locations):
     routes = []
@@ -201,11 +204,11 @@ def generate_routes(demand_locations):
         distances = current_location.nearest_neighbours(remaining_locations)
 
         # Get permutations of 4 nearest neighbours and use these to randomise (24)
-        permutations = list(itertools.permutations(distances[:4]))
+        permutations = list(itertools.permutations(distances[:5]))
         
         for maximum_capacity in range(current_location.demand, 13):
             for permutation in permutations:
-                distances[:4] = permutation
+                distances[:5] = permutation
                 routes.append(generate_route(maximum_capacity, [warehouse_location, current_location], distances, remaining_locations))
                 progress.increment()
 
@@ -307,7 +310,7 @@ demand_locations = [Location(data2["Lat"][name], data2["Long"][name], name, data
 total_demand = sum([location.demand for location in demand_locations])
 total_checks = sum([13 - location.demand for location in demand_locations])
 
-progress = Progress(total_checks * 24, "Generating Routes")
+progress = Progress(total_checks * 120, "Generating Routes")
 
 routes = generate_routes(demand_locations)
 total_routes = len(routes)
@@ -315,7 +318,7 @@ total_routes = len(routes)
 # Adds double the number of routes for the other types of truck
 routes.extend(routes)
 
-# [f'{i}_{"default" if i < total_routes else "extra"}'
+print("\nSolving Linear Program...")
 
 variables = LpVariable.dicts("route", [i for i in range(0, len(routes))], None, None, LpBinary)
 
@@ -336,7 +339,6 @@ for location in demand_locations:
 
 problem += lpSum([variables[i] for i in range(total_routes)]) <= 20
 
-print("\nSolving Linear Program...")
 problem.writeLP("vrp_optimisation.lp")
 problem.solve()
 
