@@ -1,9 +1,13 @@
 import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt, itertools
 from pulp import *
+import folium, openrouteservice as ors
 
 data = pd.read_csv('data/FoodstuffTravelTimes.csv', index_col=0)
 data2 = pd.read_csv('data/FoodstuffLocations.csv', index_col=1)
 data3 = pd.read_csv('data/weekdaydemand.csv', index_col=0)
+
+# dont look at this
+ORS_KEY = '5b3ce3597851110001cf62482926c2987d7f46118f341e666eb30010'
 
 class Location:
     def __init__(self, lat, lon, name, demand):
@@ -226,7 +230,7 @@ def generate_coefficents(routes, total_routes):
 
     return coefficents
 
-def plot_routes(routes, chosen_routes):
+def plot_routes_basic(routes, chosen_routes):
     for index, row in data2.iterrows():
         ax1.plot(row.Long, row.Lat, 'ko')
         ax1.annotate(f"{data3.demand[index] if index != 'Warehouse' else 0}, {index}", xy=(row.Long, row.Lat), xytext=(row.Long - 0.01, row.Lat + 0.003))
@@ -248,6 +252,29 @@ def plot_routes(routes, chosen_routes):
 
     plt.savefig("plot1.png", dpi = 300, bbox_inches='tight')
     plt.show()
+
+def plot_routes_advanced(routes, chosen_routes):
+    m = folium.Map(location=[warehouse_location.lat, warehouse_location.lon], zoom_start=11)
+
+    folium.Marker([warehouse_location.lat, warehouse_location.lon], popup = warehouse_location.name, icon = folium.Icon(color ='black')).add_to(m)
+
+    for location in demand_locations:
+        folium.Marker([location.lat, location.lon], popup = location.name, icon = folium.Icon(color ='red')).add_to(m)
+
+    client = ors.Client(key=ORS_KEY)
+
+    for route_index in chosen_routes:
+        current_route = routes[route_index]
+
+        visual_route = client.directions()
+
+
+
+
+
+
+    m.save("routes.html")
+    return
 
 warehouse_location = Location(data2["Lat"]["Warehouse"], data2["Long"]["Warehouse"], "Warehouse", 0)
 demand_locations = [Location(data2["Lat"][name], data2["Long"][name], name, data3.demand[name]) for name in data.columns if name not in ["Warehouse"]]
@@ -306,4 +333,6 @@ for route_index in chosen_routes:
 
     print(f"type: {route_type:>7}, cost: {'$' + str(int(coefficents[route_index])):>5}, path: {' -> '.join(route_path)}")
 
-plot_routes(routes, chosen_routes)
+plot_routes_basic(routes, chosen_routes)
+
+plot_routes_advanced(routes, chosen_routes)
