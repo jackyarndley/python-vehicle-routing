@@ -1,6 +1,15 @@
-import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt, itertools
-from pulp import *
-import folium, openrouteservice as ors, math as math, time
+import itertools
+import math as math
+import operator
+import random
+import time
+
+import folium
+import matplotlib.pyplot as plt
+import numpy as np
+import openrouteservice as ors
+import pandas as pd
+from pulp import LpVariable, LpProblem, LpBinary, LpMinimize, lpSum, LpStatus, value
 
 data = pd.read_csv('data/FoodstuffTravelTimes.csv', index_col=0)
 data2 = pd.read_csv('data/FoodstuffLocations.csv', index_col=1)
@@ -70,12 +79,12 @@ class Progress:
         self.max_iterations = max_iterations
         self.title = title
         self.start_time = time.time()
-        print(f'\n{self.title}: [{"-" * 50}] {0:.2f}% ({self.iteration}/{self.max_iterations}) {0:.2f}s\r', end='')
+        print(f'\n{self.title}: [{"-" * 50}] {0:.2f}% ({self.iteration}/{self.max_iterations}) {0:.2f}s   \r', end='')
         
     def increment(self):
         self.iteration += 1
         frac = self.iteration / self.max_iterations
-        print(f'{self.title}: [{"#" * int(round(50 * frac)) + "-" * int(round(50 * (1-frac)))}] {100. * frac:.2f}% ({self.iteration}/{self.max_iterations}) {time.time() - self.start_time:.2f}s\r', end='')
+        print(f'{self.title}: [{"#" * int(round(50 * frac)) + "-" * int(round(50 * (1-frac)))}] {100. * frac:.2f}% ({self.iteration}/{self.max_iterations}) {time.time() - self.start_time:.2f}s   \r', end='')
 
 def generate_population(size, locations):
     population = []
@@ -203,7 +212,7 @@ def generate_routes(demand_locations):
         remaining_locations = [location for location in demand_locations if location.name not in [current_location.name]]
         distances = current_location.nearest_neighbours(remaining_locations)
 
-        # Get permutations of 4 nearest neighbours and use these to randomise (24)
+        # Get permutations of 5 nearest neighbours and use these to randomise (120)
         permutations = list(itertools.permutations(distances[:5]))
         
         for maximum_capacity in range(current_location.demand, 13):
