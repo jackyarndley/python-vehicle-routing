@@ -1,6 +1,6 @@
 import numpy as np, random, operator, pandas as pd, matplotlib.pyplot as plt, itertools
 from pulp import *
-import folium, openrouteservice as ors
+import folium, openrouteservice as ors, math as math
 
 data = pd.read_csv('data/FoodstuffTravelTimes.csv', index_col=0)
 data2 = pd.read_csv('data/FoodstuffLocations.csv', index_col=1)
@@ -228,7 +228,7 @@ def generate_coefficents(routes, total_routes):
                 coefficents.append(1000000.0)
         else:
             if len(coefficents) < total_routes:
-                coefficents.append(round(time, 1) * 150.0)
+                coefficents.append(round(math.ceil(time * 10) / 10, 1) * 150.0)
             else:
                 coefficents.append(1200.0)
 
