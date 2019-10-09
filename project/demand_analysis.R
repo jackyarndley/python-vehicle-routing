@@ -43,14 +43,17 @@ anova.d <- data.frame(Brand = c("Four","Four","New","New","Pak","Pak"), Day = c(
 four.day.g <- group_by(four.day,Supermarket)
 four.day.d <- data.frame(Supermarket=four.day$Supermarket[1:11],demand=ceiling(mean(four.day$demand)))
 four.day.s <- summarise(four.day.g,sum=sum(demand))
+four.day.d.individual <- summarise(four.day.g,demand = ceiling(sum(demand)/20))
 four.end.g <- group_by(four.end,Supermarket)
 four.end.d <- data.frame(Supermarket=four.end$Supermarket[1:11],demand=ceiling(mean(four.end$demand)))
 four.end.s <- summarise(four.end.g,sum=sum(demand))
+
 
 #Setting demands and gathering summation data for fresh
 fresh.day.g <- group_by(fresh.day,Supermarket)
 fresh.day.d <- data.frame(Supermarket=fresh.day$Supermarket[1],demand=ceiling(mean(fresh.day$demand)))
 fresh.day.s <- summarise(fresh.day.g,sum=sum(demand))
+fresh.day.d.individual <- summarise(fresh.day.g,demand = ceiling(sum(demand)/20))
 fresh.end.g <- group_by(fresh.end,Supermarket)
 fresh.end.d <- data.frame(Supermarket=fresh.end$Supermarket[1],demand=ceiling(mean(fresh.end$demand)))
 fresh.end.s <- summarise(fresh.end.g,sum=sum(demand))
@@ -59,6 +62,7 @@ fresh.end.s <- summarise(fresh.end.g,sum=sum(demand))
 new.day.g <- group_by(new.day,Supermarket)
 new.day.d <- data.frame(Supermarket=new.day$Supermarket[1:19],demand=ceiling(mean(new.day$demand)))
 new.day.s <- summarise(new.day.g,sum=sum(demand))
+new.day.d.individual <- summarise(new.day.g,demand = ceiling(sum(demand)/20))
 new.end.g <- group_by(new.end,Supermarket)
 new.end.d <- data.frame(Supermarket=new.end$Supermarket[1:19],demand=ceiling(mean(new.end$demand)))
 new.end.s <- summarise(new.end.g,sum=sum(demand))
@@ -67,6 +71,7 @@ new.end.s <- summarise(new.end.g,sum=sum(demand))
 pak.day.g <- group_by(pak.day,Supermarket)
 pak.day.d <- data.frame(Supermarket=pak.day$Supermarket[1:15],demand=ceiling(mean(pak.day$demand)))
 pak.day.s <- summarise(pak.day.g,sum=sum(demand))
+pak.day.d.individual <- summarise(pak.day.g,demand = ceiling(sum(demand)/20))
 pak.end.g <- group_by(pak.end,Supermarket)
 pak.end.d <- data.frame(Supermarket=pak.end$Supermarket[1:15],demand=ceiling(mean(pak.end$demand)))
 pak.end.s <- summarise(pak.end.g,sum=sum(demand))
@@ -87,6 +92,23 @@ error.end$demand <- plan.end$demand
 error.end$error <- error.end$demand*4/error.end$sum
 error.end$fraction <- abs(error.end$error-1)
 error.end$sum <- sum(error.end$fraction)
+
+#Find the error for the individual stores
+four.day.sum = summarise(four.day.g, demand=sum(demand))
+four.day.d.individual$error <- four.day.d.individual$demand*20/four.day.sum$demand
+pak.day.sum = summarise(pak.day.g, demand=sum(demand))
+pak.day.d.individual$error <- pak.day.d.individual$demand*20/pak.day.sum$demand
+fresh.day.sum = summarise(fresh.day.g, demand=sum(demand))
+fresh.day.d.individual$error <- fresh.day.d.individual$demand*20/fresh.day.sum$demand
+new.day.sum = summarise(new.day.g, demand=sum(demand))
+new.day.d.individual$error <- new.day.d.individual$demand*20/new.day.sum$demand
+
+#Find total error for individual stores
+totalerror = sum((four.day.d.individual$error-1)) + sum((pak.day.d.individual$error-1)) + sum((fresh.day.d.individual$error-1)) + sum((new.day.d.individual$error-1))
+
+#Create data frame for error and plot graph
+errors.comparison <- data.frame("Type"=c("Brands Grouped", "Brands Separated"), "Error"=c(sum(error.day$fraction), totalerror))
+ggplot(errors, mapping=aes(x=Type, y=Error)) + geom_col(aes(fill=Type)) + labs(x ="Grouping Type", y="Total Absolute Fractional Error", title="Comparison of Total Absolute Fractional Errors")
 
 #Saving data as csv for further usage/plotting
 write.csv(plan.day, file.path("./data",'weekdaydemand.csv'),row.names = FALSE)
