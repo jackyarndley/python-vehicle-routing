@@ -312,7 +312,7 @@ def generate_coefficents(routes, total_routes):
                 coefficents.append(1000000.0)
         else:
             if len(coefficents) < total_routes:
-                coefficents.append(round(math.ceil(time * 10) / 10, 1) * 150.0)
+                coefficents.append(math.ceil(time * 10) / 10 * 150.0)
             else:
                 coefficents.append(1200.0)
 
@@ -376,7 +376,7 @@ def plot_routes_advanced(routes, chosen_routes):
 
         folium.PolyLine(
             locations = [list(reversed(coord)) for coord in visual_route['features'][0]['geometry']['coordinates']],
-            tooltip = f'{round(math.ceil(time * 10) / 10, 1):.1f}h ${coefficents[route_index]}',
+            tooltip = f'{math.ceil(time * 10) / 10:.1f}h ${coefficents[route_index]}',
             color = color,
             opacity = 0.75,
             weight = 5
