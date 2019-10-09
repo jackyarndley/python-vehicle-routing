@@ -12,8 +12,8 @@ import pandas as pd
 from pulp import LpVariable, LpProblem, LpBinary, LpMinimize, lpSum, LpStatus, value
 
 # Load the specific data files into pandas dataframes
-data = pd.read_csv('data/FoodstuffTravelTimes.csv', index_col=0)
-data2 = pd.read_csv('data/FoodstuffLocations.csv', index_col=1)
+data = pd.read_csv('data/new_durations.csv', index_col=0)
+data2 = pd.read_csv('data/new_locations.csv', index_col=1)
 data3 = pd.read_csv('data/weekdaydemand.csv', index_col=0)
 
 # OpenRouteService key - this is mine
