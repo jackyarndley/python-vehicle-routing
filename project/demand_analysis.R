@@ -15,6 +15,14 @@ demand$Type <- sub("(\\w+).*", "\\1", demand$Supermarket)
 demand$Type = as.factor(demand$Type)
 demand$Supermarket = as.factor(demand$Supermarket)
 
+#Filtering by Brand
+four <- filter(demand,Type=="Four")
+new <- filter(demand,Type=="New")
+pak <- filter(demand,Type=="Pak")
+
+#Plotting distributions of all supermarkets
+ggplot(demand)+geom_bar(aes(x=demand,fill=Type))+facet_grid(Supermarket~weekday)
+
 #Filtering dataset by weekday/Saturday and brands
 weekday <- filter(demand,weekday%in% c("Monday","Tuesday","Wednesday","Thursday","Friday"))
 weekend <- filter(demand,weekday=="Saturday")
