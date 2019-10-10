@@ -420,7 +420,6 @@ for location in demand_locations:
 
 problem += lpSum([variables[i] for i in range(total_routes)]) <= 20
 
-problem.writeLP("vrp_optimisation.lp")
 problem.solve()
 
 print(f"Status: {LpStatus[problem.status]}")
