@@ -14,7 +14,7 @@ from pulp import LpVariable, LpProblem, LpBinary, LpMinimize, lpSum, LpStatus, v
 # Load the specific data files into pandas dataframes
 data = pd.read_csv('data/new_durations.csv', index_col=0)
 data2 = pd.read_csv('data/new_locations.csv', index_col=1)
-data3 = pd.read_csv('data/weekdaydemand.csv', index_col=0)
+data3 = pd.read_csv('data/weekenddemand.csv', index_col=0)
 
 # OpenRouteService key - this is mine
 ORS_KEY = '5b3ce3597851110001cf62482926c2987d7f46118f341e666eb30010'
@@ -285,11 +285,11 @@ def generate_routes(demand_locations):
         distances = current_location.nearest_neighbours(remaining_locations)
 
         # Get permutations of 5 nearest neighbours and use these to randomise (120)
-        permutations = list(itertools.permutations(distances[:5]))
+        permutations = list(itertools.permutations(distances[:8], 2))
         
         for maximum_capacity in range(current_location.demand, 13):
             for permutation in permutations:
-                distances[:5] = permutation
+                distances[:2] = permutation
                 routes.append(generate_route(maximum_capacity, [warehouse_location, current_location], distances, remaining_locations))
                 progress.increment()
 
@@ -391,7 +391,7 @@ demand_locations = [Location(data2["Lat"][name], data2["Long"][name], name, data
 total_demand = sum([location.demand for location in demand_locations])
 total_checks = sum([13 - location.demand for location in demand_locations])
 
-progress = Progress(total_checks * 120, "Generating Routes")
+progress = Progress(total_checks * 56, "Generating Routes")
 
 routes = generate_routes(demand_locations)
 total_routes = len(routes)
