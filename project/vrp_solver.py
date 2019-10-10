@@ -3,7 +3,6 @@ import math as math
 import operator
 import random
 import time
-
 import folium
 import matplotlib.pyplot as plt
 import numpy as np
@@ -136,7 +135,6 @@ class Route:
         # Add the starting location as the end to form the entire route
         return path + [path[0]]
 
-# TODO member functions of this class need commenting
 class Solver:
     '''
     Solver class contains all of the information to solve a TSP problem on a selected set 
