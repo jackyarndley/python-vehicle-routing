@@ -128,7 +128,7 @@ class Route:
         '''
         List the entire path of the route in the form of an list of lists with lon and lat
         data in each. This method is primarily for the visualisation of the route using 
-        OpenRouteService and the foilum geographic plotting package.
+        OpenRouteService and the folium geographic plotting package.
         '''
         # Go through each lon and lat coordinates of each location in the route
         path = [[location.lon, location.lat] for location in self.route]
@@ -185,7 +185,7 @@ class Solver:
         Choose a selection of the population to use to create the next generation.
         Choice is weighted to favour those with high fitness.
         '''
-        # Store the fitnesses in a data fram to make a probablistic selection
+        # Store the fitnesses in a data frame to make a probablistic selection
         fitnesses = pd.DataFrame(np.array(ranked_population), columns=["Index","Fitness"])
         fitnesses['cum_sum'] = fitnesses.Fitness.cumsum()
         fitnesses['cum_perc'] = 100*fitnesses.cum_sum/fitnesses.Fitness.sum()
@@ -197,7 +197,7 @@ class Solver:
         for i in range(0, len(ranked_population) - self.elite_size):
             pick = 100 * random.random()
 
-            # Go throuah all of the fitnesses array to find the member to select
+            # Go through all of the fitnesses array to find the member to select
             for i in range(0, len(ranked_population)):
                 if pick <= fitnesses.iat[i,3]:
                     # Add to the selection
@@ -241,7 +241,7 @@ class Solver:
     def mutate_population(self):
         '''
         Mutates all of the individuals in the population. In the route, there is a
-        chance defined buy the mutation rate that each node will get randomly swapped with
+        chance defined by the mutation rate that each node will get randomly swapped with
         another. This is not an essential component of the algorithm, however for large
         TSP problems, this dramatically improves the convergance of the solution.
         '''  
@@ -324,8 +324,8 @@ class Progress:
 def generate_route(maximum_capacity, current_locations, distances, remaining_locations):
     '''
     Generate a route that is feasable for a defined demand. The locations from the
-    current_locations list will be appended to the route until the no more routes can 
-    be possibly added.
+    current_locations list will be appended to the route until no more routes can 
+    possibly be added.
 
     Inputs
     --------
