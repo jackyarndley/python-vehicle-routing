@@ -642,17 +642,17 @@ for i in range(10000):
 
         for location in [location for location in route.route if location.name not in ["Warehouse"]]:
             distributions = {
-                "New World": (4,8),
-                "Pak 'n Save": (6,10),
-                "Four Square": (0,4),
-                "Fresh Collective": (0,4)
+                "New World": (6,6),
+                "Pak 'n Save": (8,8),
+                "Four Square": (2,2),
+                "Fresh Collective": (2,2)
             }
 
             location_type = data2["Type"][location.name]
 
             bounds = distributions[location_type]
 
-            location.demand = random.randrange(bounds[0], bounds[1] + 1)
+            location.demand = random.randrange(bounds[0], bounds[1])
 
         new_demand = route.calc_demand()
 
