@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import openrouteservice as ors
 import pandas as pd
+import seaborn as sns
 from pulp import LpVariable, LpProblem, LpBinary, LpMinimize, lpSum, LpStatus, value
 
 # Load the specific data files into pandas dataframes
@@ -613,7 +614,80 @@ for route_index in chosen_routes:
     print(f"type: {route_type:>7}, cost: {'$' + str(int(coefficents[route_index])):>5}, path: {' -> '.join(route_path)}")
 
 # Plot all of the chosen routes on a matplotlib plot
-plot_routes_basic(routes, chosen_routes)
+# plot_routes_basic(routes, chosen_routes)
 
 # Plot all of the chosen routes on an interactive leaflet map
-plot_routes_advanced(routes, chosen_routes)
+# plot_routes_advanced(routes, chosen_routes)
+
+# Simulation stuff...
+
+# data_copy = data
+
+# for index, row in data.iterrows():
+#     # Testing 1.1 times traffic
+#     data[index] *= 1.0
+
+costs = []
+
+for i in range(10000):
+    # Get new demands
+    new_routes = [routes[index] for index in chosen_routes]
+
+    total_cost = 0
+
+    shortages = []
+
+    for route_index in chosen_routes:
+        route = routes[route_index]
+
+        for location in [location for location in route.route if location.name not in ["Warehouse"]]:
+            distributions = {
+                "New World": (4,8),
+                "Pak 'n Save": (6,10),
+                "Four Square": (0,4),
+                "Fresh Collective": (0,4)
+            }
+
+            location_type = data2["Type"][location.name]
+
+            bounds = distributions[location_type]
+
+            location.demand = random.randrange(bounds[0], bounds[1] + 1)
+
+        new_demand = route.calc_demand()
+
+        while new_demand > 12:
+            least_demand = min([(route.route.index(location), location.demand) for location in route.route if location.name not in ["Warehouse"]], key = operator.itemgetter(1))
+            shortages.append(route.route[least_demand[0]])
+            route.route.pop(least_demand[0])
+            new_demand = route.calc_demand()
+
+        # Calculate the total time in hours
+        time = route.calc_distance()
+        time += route.calc_demand() * 300
+        time /= 3600.0
+        
+        # Check if the time exceeds four hours
+        if time > 4.0:
+            if route_index >= total_routes:
+                # Cost per 4 hour segment of leased truck
+                total_cost += 1200 * ((time // 4) + 1)
+            else:
+                # Non-leased schedule should not be allowed if time exceeds 4 hours
+                total_cost += 600 + math.ceil((time - 4.0) * 10) / 10 * 150.0
+        else:
+            if route_index < total_routes:
+                # Add the time with ceiling to 6 minute intervals
+                total_cost += math.ceil(time * 10) / 10 * 150.0
+            else:
+                # The truck is a leased truck
+                total_cost += 1200.0
+
+    for location in shortages:
+        total_cost += 1200
+
+    costs.append(total_cost)
+    
+sns.distplot(costs)
+    
+plt.show()
