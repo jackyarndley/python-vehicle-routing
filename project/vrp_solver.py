@@ -382,14 +382,14 @@ def generate_routes(demand_locations):
         nearest_default = distances[:8]
 
         # Get permutations of 8 nearest neighbours of length 2 and use these to randomise, 56 in total
-        permutations = list(itertools.permutations(distances[:8], 2))
+        permutations = list(itertools.permutations(distances[:2], 2))
         
         # Vary the maximum capacity of the trucks to generate more diverse solutions
         for maximum_capacity in range(current_location.demand, 13):
             for permutation in permutations:
                 # Replace the start of the distances array with the permutation
                 distances[:2] = permutation
-                distances[2:8] = [index for index in nearest_default if index not in permutation]
+                distances[2:2] = [index for index in nearest_default if index not in permutation]
 
                 # Run the generate route algorithm with the specified inputs
                 routes.append(generate_route(maximum_capacity, [warehouse_location, current_location], distances, remaining_locations))
@@ -706,3 +706,5 @@ for _i in range(10000):
 sns.distplot(costs, bins = 100)
     
 plt.show()
+
+print(f'2.5-97.5 Cost Percentile: {np.percentile(costs, [2.5, 97.5])}')
