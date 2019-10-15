@@ -383,14 +383,14 @@ def generate_routes(demand_locations):
         nearest_default = distances[:8]
 
         # Get permutations of 8 nearest neighbours of length 2 and use these to randomise, 56 in total
-        permutations = list(itertools.permutations(distances[:8], 2))
+        permutations = list(itertools.permutations(distances[:2], 2))
         
         # Vary the maximum capacity of the trucks to generate more diverse solutions
         for maximum_capacity in range(current_location.demand, 13):
             for permutation in permutations:
                 # Replace the start of the distances array with the permutation
                 distances[:2] = permutation
-                distances[2:8] = [index for index in nearest_default if index not in permutation]
+                distances[2:2] = [index for index in nearest_default if index not in permutation]
 
                 # Run the generate route algorithm with the specified inputs
                 routes.append(generate_route(maximum_capacity, [warehouse_location, current_location], distances, remaining_locations))
@@ -415,22 +415,22 @@ def generate_coefficents(routes, total_routes):
     # Go through all routes to calculate the coefficents for the objective function
     for route in routes:
         # Calculate the total time in hours
-        time = route.calc_distance()
-        time += route.calc_demand() * 300
-        time /= 3600.0
+        route_time = route.calc_distance()
+        route_time += route.calc_demand() * 300
+        route_time /= 3600.0
         
         # Check if the time exceeds four hours
-        if time > 4.0:
+        if route_time > 4.0:
             if len(coefficents) < total_routes:
                 # Cost per 4 hour segment of leased truck
-                coefficents.append(1200 * ((time // 4) + 1))
+                coefficents.append(1200 * ((route_time // 4) + 1))
             else:
                 # Non-leased schedule should not be allowed if time exceeds 4 hours
                 coefficents.append(1000000.0)
         else:
             if len(coefficents) < total_routes:
                 # Add the time with ceiling to 6 minute intervals
-                coefficents.append(math.ceil(time * 10) / 10 * 150.0)
+                coefficents.append(math.ceil(route_time * 10) / 10 * 150.0)
             else:
                 # The truck is a leased truck
                 coefficents.append(1200.0)
@@ -518,9 +518,9 @@ def plot_routes_advanced(routes, chosen_routes):
         current_route = routes[route_index]
 
         # Calculate the time of the route in hours
-        time = current_route.calc_distance()
-        time += current_route.calc_demand() * 300
-        time /= 3600.0
+        route_time = current_route.calc_distance()
+        route_time += current_route.calc_demand() * 300
+        route_time /= 3600.0
 
         # Randomise the colour of each route using a random hex generator
         color = f'#{"".join(random.choice("0123456789ABCDEF") for i in range(6))}'
@@ -536,7 +536,7 @@ def plot_routes_advanced(routes, chosen_routes):
         # Create a polyline object and plot on the map with the correct data and colour
         folium.PolyLine(
             locations = [list(reversed(coord)) for coord in visual_route['features'][0]['geometry']['coordinates']],
-            tooltip = f'{math.ceil(time * 10) / 10:.1f}h ${coefficents[route_index]}',
+            tooltip = f'{math.ceil(route_time * 10) / 10:.1f}h ${coefficents[route_index]}',
             color = color,
             opacity = 0.75,
             weight = 5
@@ -628,86 +628,96 @@ for route_index in chosen_routes:
 
 # data_copy = data
 
-# for index, row in data.iterrows():
-#     # Testing 1.1 times traffic
-#     data[index] *= 1.0
+progress = Progress(1000 * 6, "Simulating")
 
-costs = []
+traffic_multiplier = [1.0, 2.0, 3.0, 4.0]
+costs = [[], [], [], []]
 
-for _i in range(10000):
-    total_cost = 0
-    shortages = []
+for i in range(len(traffic_multiplier)):
+    data = pd.read_csv('data/new_durations.csv', index_col=0)
+    for index, row in data.iterrows():
+        # Testing 1.1 times traffic
+        data[index] *= traffic_multiplier[i]
 
-    for route_index in chosen_routes:
-        route = copy.deepcopy(routes[route_index])
+    for _j in range(1000):
+        total_cost = 0
+        shortages = []
 
-        for location in [location for location in route.route if location.name not in ["Warehouse"]]:
-            location_type = data2["Type"][location.name]
+        for route_index in chosen_routes:
+            route = copy.deepcopy(routes[route_index])
 
-            demands = data4['Demand'][location_type]
+            for location in [location for location in route.route if location.name not in ["Warehouse"]]:
+                location_type = data2["Type"][location.name]
 
-            location.demand = random.sample(demands, 1)[0]
+                demands = data4['Demand'][location_type]
 
-        route.route = [location for location in route.route if location.name in ["Warehouse"] or location.demand > 0]
+                location.demand = random.sample(demands, 1)[0]
 
-        new_demand = route.calc_demand()
+            route.route = [location for location in route.route if location.name in ["Warehouse"] or location.demand > 0]
 
-        while new_demand > 12:
-            least_demand = min([(route.route.index(location), location.demand) for location in route.route if location.name not in ["Warehouse"]], key = operator.itemgetter(1))
-            shortages.append(copy.deepcopy(route.route[least_demand[0]]))
-            route.route.pop(least_demand[0])
             new_demand = route.calc_demand()
 
-        # Calculate the total time in hours
-        time = route.calc_distance()
-        time += route.calc_demand() * 300
-        time /= 3600.0
-        
-        # Check if the time exceeds four hours
-        if time > 4.0:
-            if route_index >= total_routes:
-                # Cost per 4 hour segment of leased truck
-                total_cost += 1200 * ((time // 4) + 1)
+            while new_demand > 12:
+                least_demand = min([(route.route.index(location), location.demand) for location in route.route if location.name not in ["Warehouse"]], key = operator.itemgetter(1))
+                shortages.append(copy.deepcopy(route.route[least_demand[0]]))
+                route.route.pop(least_demand[0])
+                new_demand = route.calc_demand()
+
+            # Calculate the total time in hours
+            route_time = route.calc_distance()
+            route_time += route.calc_demand() * 300
+            route_time /= 3600.0
+            
+            # Check if the time exceeds four hours
+            if route_time > 4.0:
+                if route_index >= total_routes:
+                    # Cost per 4 hour segment of leased truck
+                    total_cost += 1200 * ((route_time // 4) + 1)
+                else:
+                    # Non-leased schedule should not be allowed if time exceeds 4 hours
+                    total_cost += 600 + math.ceil((route_time - 4.0) * 10) / 10 * 150.0
             else:
-                # Non-leased schedule should not be allowed if time exceeds 4 hours
-                total_cost += 600 + math.ceil((time - 4.0) * 10) / 10 * 150.0
-        else:
-            if route_index < total_routes:
-                # Add the time with ceiling to 6 minute intervals
-                total_cost += math.ceil(time * 10) / 10 * 150.0
-            else:
-                # The truck is a leased truck
-                total_cost += 1200.0
+                if route_index < total_routes:
+                    # Add the time with ceiling to 6 minute intervals
+                    total_cost += math.ceil(route_time * 10) / 10 * 150.0
+                else:
+                    # The truck is a leased truck
+                    total_cost += 1200.0
 
-        # print(f'{total_cost}, {time}, {route.calc_distance()}, {route.calc_demand()}')
+            # print(f'{total_cost}, {time}, {route.calc_distance()}, {route.calc_demand()}')
 
-    number_extra = 0
+        number_extra = 0
 
-    while len(shortages) > 0:
-        current_demand = 0
-        number_extra += 1
-        i = 0
-        shortage_indices = []
+        while len(shortages) > 0:
+            current_demand = 0
+            number_extra += 1
+            k = 0
+            shortage_indices = []
 
-        while current_demand < 12 and i < len(shortages):
-            shortage_demand = shortages[i].demand
+            while current_demand < 12 and k < len(shortages):
+                shortage_demand = shortages[k].demand
 
-            if current_demand + shortage_demand <= 12:
-                current_demand += shortage_demand
-                shortage_indices.append(i)
-            i += 1
+                if current_demand + shortage_demand <= 12:
+                    current_demand += shortage_demand
+                    shortage_indices.append(k)
+                k += 1
 
-        for index in sorted(shortage_indices, reverse=True):
-            shortages.pop(index)
+            for index in sorted(shortage_indices, reverse=True):
+                shortages.pop(index)
 
-    total_cost += 1200 * number_extra
+        total_cost += 1200 * number_extra
 
-    # print(f'{total_cost}')
+        # print(f'{total_cost}')
 
-    costs.append(total_cost)
-    
-sns.distplot(costs, bins = 100)
+        costs[i].append(total_cost)
+        progress.increment()
+
+print("\nPlotting Simulation...")
+
+for cost in costs:
+    sns.distplot(cost, bins = 100)
     
 plt.show()
 
-print(f'2.5-97.5 Cost Percentile: {np.percentile(costs, [2.5, 97.5])}')
+for i in range(len(traffic_multiplier)):
+    print(f'Multiplier: {traffic_multiplier[i]:.2f}, 2.5-97.5 Cost Percentile: {np.percentile(costs[i], [2.5, 97.5])}')
