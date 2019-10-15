@@ -2,6 +2,7 @@ import itertools
 import math as math
 import operator
 import random
+import copy
 import time
 import folium
 import matplotlib.pyplot as plt
@@ -14,8 +15,8 @@ from pulp import LpVariable, LpProblem, LpBinary, LpMinimize, lpSum, LpStatus, v
 # Load the specific data files into pandas dataframes
 data = pd.read_csv('data/new_durations.csv', index_col=0)
 data2 = pd.read_csv('data/new_locations.csv', index_col=1)
-data3 = pd.read_csv('data/weekdaydemand.csv', index_col=0)
-data4 = pd.read_csv('data/daydemand.csv', index_col=0)
+data3 = pd.read_csv('data/weekenddemand.csv', index_col=0)
+data4 = pd.read_csv('data/enddemand.csv', index_col=0)
 
 for index, row in data4.iterrows():
     row['Demand'] = [int(demand) for demand in row['Demand'].split(' ')]
@@ -634,15 +635,11 @@ for route_index in chosen_routes:
 costs = []
 
 for _i in range(10000):
-    # Get new demands
-    new_routes = [routes[index] for index in chosen_routes]
-
     total_cost = 0
-
     shortages = []
 
     for route_index in chosen_routes:
-        route = routes[route_index]
+        route = copy.deepcopy(routes[route_index])
 
         for location in [location for location in route.route if location.name not in ["Warehouse"]]:
             location_type = data2["Type"][location.name]
@@ -651,13 +648,13 @@ for _i in range(10000):
 
             location.demand = random.sample(demands, 1)[0]
 
-        route.route = [location for location in route.route if location.demand > 0]
+        route.route = [location for location in route.route if location.name in ["Warehouse"] or location.demand > 0]
 
         new_demand = route.calc_demand()
 
         while new_demand > 12:
             least_demand = min([(route.route.index(location), location.demand) for location in route.route if location.name not in ["Warehouse"]], key = operator.itemgetter(1))
-            shortages.append(route.route[least_demand[0]])
+            shortages.append(copy.deepcopy(route.route[least_demand[0]]))
             route.route.pop(least_demand[0])
             new_demand = route.calc_demand()
 
