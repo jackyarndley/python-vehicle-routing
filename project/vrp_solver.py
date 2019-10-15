@@ -14,8 +14,8 @@ from pulp import LpVariable, LpProblem, LpBinary, LpMinimize, lpSum, LpStatus, v
 # Load the specific data files into pandas dataframes
 data = pd.read_csv('data/new_durations.csv', index_col=0)
 data2 = pd.read_csv('data/new_locations.csv', index_col=1)
-data3 = pd.read_csv('data/weekenddemand.csv', index_col=0)
-data4 = pd.read_csv('data/enddemand.csv', index_col=0)
+data3 = pd.read_csv('data/weekdaydemand.csv', index_col=0)
+data4 = pd.read_csv('data/daydemand.csv', index_col=0)
 
 for index, row in data4.iterrows():
     row['Demand'] = [int(demand) for demand in row['Demand'].split(' ')]
@@ -382,14 +382,14 @@ def generate_routes(demand_locations):
         nearest_default = distances[:8]
 
         # Get permutations of 8 nearest neighbours of length 2 and use these to randomise, 56 in total
-        permutations = list(itertools.permutations(distances[:2], 2))
+        permutations = list(itertools.permutations(distances[:8], 2))
         
         # Vary the maximum capacity of the trucks to generate more diverse solutions
         for maximum_capacity in range(current_location.demand, 13):
             for permutation in permutations:
                 # Replace the start of the distances array with the permutation
                 distances[:2] = permutation
-                distances[2:2] = [index for index in nearest_default if index not in permutation]
+                distances[2:8] = [index for index in nearest_default if index not in permutation]
 
                 # Run the generate route algorithm with the specified inputs
                 routes.append(generate_route(maximum_capacity, [warehouse_location, current_location], distances, remaining_locations))
@@ -651,6 +651,8 @@ for _i in range(10000):
 
             location.demand = random.sample(demands, 1)[0]
 
+        route.route = [location for location in route.route if location.demand > 0]
+
         new_demand = route.calc_demand()
 
         while new_demand > 12:
@@ -684,18 +686,22 @@ for _i in range(10000):
 
     number_extra = 0
 
-    if len(shortages) > 0:
+    while len(shortages) > 0:
         current_demand = 0
         number_extra += 1
+        i = 0
+        shortage_indices = []
 
-        for i in range(len(shortages)):
+        while current_demand < 12 and i < len(shortages):
             shortage_demand = shortages[i].demand
 
-            if current_demand + shortage_demand > 12:
-                number_extra += 1
-                current_demand = 0
-            else:
+            if current_demand + shortage_demand <= 12:
                 current_demand += shortage_demand
+                shortage_indices.append(i)
+            i += 1
+
+        for index in sorted(shortage_indices, reverse=True):
+            shortages.pop(index)
 
     total_cost += 1200 * number_extra
 
