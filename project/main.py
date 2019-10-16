@@ -96,7 +96,7 @@ if __name__ == '__main__':
     # Plot all of the chosen routes on an interactive leaflet map
     # plot_routes_advanced(routes, chosen_routes, coefficents)
 
-    samples = 1000
+    samples = 2500
     traffic_multiplier = [1.0]
 
     progress = Progress(samples * len(traffic_multiplier), "Simulating")

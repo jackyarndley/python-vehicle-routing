@@ -49,7 +49,7 @@ def simulate(routes, chosen_routes, total_routes, total_chosen, samples, traffic
                         total_cost += 1200 * ((route_time // 4) + 1)
                     else:
                         # Non-leased schedule should not be allowed if time exceeds 4 hours
-                        total_cost += 600 + math.ceil((route_time - 4.0) * 10) / 10 * 150.0
+                        total_cost += 600 + math.ceil((route_time - 4.0) * 10) / 10 * 200.0
                 else:
                     if route_index < total_routes:
                         # Add the time with ceiling to 6 minute intervals
