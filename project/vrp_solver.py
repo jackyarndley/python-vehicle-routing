@@ -15,8 +15,8 @@ from pulp import LpVariable, LpProblem, LpBinary, LpMinimize, lpSum, LpStatus, v
 # Load the specific data files into pandas dataframes
 data = pd.read_csv('data/new_durations.csv', index_col=0)
 data2 = pd.read_csv('data/new_locations.csv', index_col=1)
-data3 = pd.read_csv('data/weekenddemand.csv', index_col=0)
-data4 = pd.read_csv('data/enddemand.csv', index_col=0)
+data3 = pd.read_csv('data/weekdaydemand.csv', index_col=0)
+data4 = pd.read_csv('data/daydemand.csv', index_col=0)
 
 for index, row in data4.iterrows():
     row['Demand'] = [int(demand) for demand in row['Demand'].split(' ')]
@@ -383,14 +383,14 @@ def generate_routes(demand_locations):
         nearest_default = distances[:8]
 
         # Get permutations of 8 nearest neighbours of length 2 and use these to randomise, 56 in total
-        permutations = list(itertools.permutations(distances[:2], 2))
+        permutations = list(itertools.permutations(distances[:8], 2))
         
         # Vary the maximum capacity of the trucks to generate more diverse solutions
         for maximum_capacity in range(current_location.demand, 13):
             for permutation in permutations:
                 # Replace the start of the distances array with the permutation
                 distances[:2] = permutation
-                distances[2:2] = [index for index in nearest_default if index not in permutation]
+                distances[2:8] = [index for index in nearest_default if index not in permutation]
 
                 # Run the generate route algorithm with the specified inputs
                 routes.append(generate_route(maximum_capacity, [warehouse_location, current_location], distances, remaining_locations))
@@ -605,6 +605,7 @@ print(f"Total Cost: ${value(problem.objective)}")
 # variable is named after, from the variables that are chosen
 chosen_routes = [int(route.name.split("_")[1]) for route in problem.variables() if route.varValue > 0.1]
 chosen_routes.sort()
+total_chosen = len(chosen_routes)
 
 print(f"Chosen Routes:")
 
@@ -628,10 +629,10 @@ for route_index in chosen_routes:
 
 # data_copy = data
 
-progress = Progress(1000 * 6, "Simulating")
+progress = Progress(1000 * 3, "Simulating")
 
-traffic_multiplier = [1.0, 2.0, 3.0, 4.0]
-costs = [[], [], [], []]
+traffic_multiplier = [1.0, 1.2, 1.4]
+costs = [[], [], []]
 
 for i in range(len(traffic_multiplier)):
     data = pd.read_csv('data/new_durations.csv', index_col=0)
@@ -686,11 +687,10 @@ for i in range(len(traffic_multiplier)):
 
             # print(f'{total_cost}, {time}, {route.calc_distance()}, {route.calc_demand()}')
 
-        number_extra = 0
+        shortage_times = []
 
         while len(shortages) > 0:
             current_demand = 0
-            number_extra += 1
             k = 0
             shortage_indices = []
 
@@ -702,10 +702,26 @@ for i in range(len(traffic_multiplier)):
                     shortage_indices.append(k)
                 k += 1
 
+            shortage_route = Solver([warehouse_location] + [shortages[l] for l in shortage_indices], 5, 2, 0.0, 5).run()
+
+            shortage_time = shortage_route.calc_distance()
+            shortage_time += shortage_route.calc_demand() * 300
+            shortage_time /= 3600.0
+
+            shortage_times.append(shortage_time)
+
             for index in sorted(shortage_indices, reverse=True):
                 shortages.pop(index)
 
-        total_cost += 1200 * number_extra
+        # print(shortage_times)
+        for l in range(len(shortage_times)):
+            if shortage_times[l] >= 4.0:
+                total_cost += 1200 * ((shortage_times[l] // 4) + 1)
+            else:
+                if total_chosen + l <= 20:
+                    total_cost += math.ceil(shortage_times[l] * 10) / 10 * 150.0
+                else:
+                    total_cost += 1200
 
         # print(f'{total_cost}')
 
@@ -715,7 +731,7 @@ for i in range(len(traffic_multiplier)):
 print("\nPlotting Simulation...")
 
 for cost in costs:
-    sns.distplot(cost, bins = 100)
+    sns.distplot(cost)
     
 plt.show()
 
