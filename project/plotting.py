@@ -7,7 +7,7 @@ import openrouteservice as ors
 from data import data, data2, data3, data4, ORS_KEY
 from classes import Location
 
-def plot_routes_basic(routes, chosen_routes):
+def plot_routes_basic(routes, chosen_routes, file_name):
     '''
     Generate a basic plot of the data using matplotlib. This displays each location and the 
     direction of the route connecting them. It also displays the demand at each node.
@@ -46,9 +46,10 @@ def plot_routes_basic(routes, chosen_routes):
         ax1.arrow(prev_lon, prev_lat, current_route.route[0].lon - prev_lon, current_route.route[0].lat - prev_lat, length_includes_head=True, ec=color, fc=color)
 
     # Save figure with small margins
-    plt.savefig("plot1.png", dpi = 300, bbox_inches='tight')
+    plt.savefig(file_name, dpi = 300, bbox_inches='tight')
+    plt.close()
 
-def plot_routes_advanced(routes, chosen_routes, coefficents):
+def plot_routes_advanced(routes, chosen_routes, coefficents, file_name):
     '''
     Generate an interactive map of the data using folium, a python wrapper for the 
     leaflet library. The route for each truck is retrieved from OpenRouteService so that a 
@@ -117,4 +118,4 @@ def plot_routes_advanced(routes, chosen_routes, coefficents):
         ).add_to(m)
 
     # Save the map as an html file
-    m.save("routes.html")
+    m.save(file_name)

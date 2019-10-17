@@ -12,6 +12,7 @@ from data import data, data2, data3, data4, data5, data6
 from classes import Location, Route, Solver, Progress
 from generation import generate_routes, generate_coefficents
 from simulation import simulate_weekday, simulate_weekend
+from plotting import plot_routes_basic, plot_routes_advanced
 
 if __name__ == '__main__':
     print("Running for Weekdays...")
@@ -93,10 +94,10 @@ if __name__ == '__main__':
         print(f"type: {route_type:>7}, cost: {'$' + str(int(coefficents[route_index])):>5}, path: {' -> '.join(route_path)}")
 
     # Plot all of the chosen routes on a matplotlib plot
-    # plot_routes_basic(routes, chosen_routes)
+    plot_routes_basic(routes, chosen_routes, "plot1.png")
 
     # Plot all of the chosen routes on an interactive leaflet map
-    # plot_routes_advanced(routes, chosen_routes, coefficents)
+    plot_routes_advanced(routes, chosen_routes, coefficents, "routes1.html")
 
     samples = 2500
     traffic_multiplier = [1.0]
@@ -107,10 +108,14 @@ if __name__ == '__main__':
     
     print("\nPlotting Simulation...")
 
+    plt.style.use('ggplot')
+    _fig, ax1 = plt.subplots(figsize=(10, 7))
+
     for cost in costs:
-        sns.distplot(cost, bins = 100)
+        sns.distplot(cost, bins = 100, ax = ax1)
         
-    plt.show()
+    plt.savefig("plot3.png", dpi = 300, bbox_inches='tight')
+    plt.close()
 
     for i in range(len(traffic_multiplier)):
         print(f'Multiplier: {traffic_multiplier[i]:.2f}, 2.5-97.5 Cost Percentile: {np.percentile(costs[i], [2.5, 97.5])}')
@@ -193,16 +198,26 @@ if __name__ == '__main__':
         # Print out each route type, cost and path
         print(f"type: {route_type:>7}, cost: {'$' + str(int(coefficents[route_index])):>5}, path: {' -> '.join(route_path)}")
 
+    # Plot all of the chosen routes on a matplotlib plot
+    plot_routes_basic(routes, chosen_routes, "plot2.png")
+
+    # Plot all of the chosen routes on an interactive leaflet map
+    plot_routes_advanced(routes, chosen_routes, coefficents, "routes2.html")
+
     progress = Progress(samples * len(traffic_multiplier), "Simulating Saturdays")
 
     costs_end = simulate_weekend(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
 
     print("\nPlotting Simulation...")
 
+    plt.style.use('ggplot')
+    _fig, ax1 = plt.subplots(figsize=(10, 7))
+
     for cost in costs_end:
-        sns.distplot(cost, bins = 100)
+        sns.distplot(cost, bins = 100, ax = ax1)
         
-    plt.show()
+    plt.savefig("plot4.png", dpi = 300, bbox_inches='tight')
+    plt.close()
 
     for i in range(len(traffic_multiplier)):
         print(f'Multiplier: {traffic_multiplier[i]:.2f}, 2.5-97.5 Cost Percentile: {np.percentile(costs_end[i], [2.5, 97.5])}')
