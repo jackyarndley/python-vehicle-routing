@@ -102,19 +102,56 @@ if __name__ == '__main__':
     samples = 2500
     traffic_multiplier = [1.0]
 
-    progress = Progress(samples * len(traffic_multiplier), "Simulating Weekdays")
+    progress = Progress(samples * len(traffic_multiplier), "Simulating Weekdays without traffic")
     
+    # Calculating costs for weekday simulations
     costs = simulate_weekday(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
     
     print("\nPlotting Simulation...")
 
+    # Plotting and saving simulation distributions
     plt.style.use('ggplot')
     _fig, ax1 = plt.subplots(figsize=(10, 7))
 
+    i = 0
     for cost in costs:
-        sns.distplot(cost, bins = 100, ax = ax1)
-        
+        labelstr = 'Traffic Multiplier: ' + str(traffic_multiplier[i])
+        sns.distplot(cost, bins = 100, ax = ax1, label=labelstr)
+        i = i + 1
+
+    
+    ax1.set_xlabel('Cost ($)')
+    ax1.set_ylabel('Density')
+    ax1.axvline(np.percentile(costs,2.5),color='r')
+    ax1.axvline(np.percentile(costs,97.5),color='r',label='95% Prediction Range')
+    ax1.legend()
     plt.savefig("plot3.png", dpi = 300, bbox_inches='tight')
+    plt.close()
+
+    traffic_multiplier = [1,1.4,1.8,2.2]
+    progress = Progress(samples * len(traffic_multiplier), "Simulating Weekdays with traffic")
+
+    # Calculating costs for weekday simulations
+    costs = simulate_weekday(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
+
+    print("\nPlotting Simulation...")
+
+    # Plotting and saving simulation distributions
+    plt.style.use('ggplot')
+    _fig, ax1 = plt.subplots(figsize=(10, 7))
+
+    i = 0
+    for cost in costs:
+        labelstr = 'Traffic Multiplier: ' + str(traffic_multiplier[i])
+        sns.distplot(cost, bins = 100, ax = ax1, label=labelstr)
+        i = i + 1
+    
+    ax1.set_xlabel('Cost ($)')
+    ax1.set_ylabel('Density')
+    ax1.axvline(np.percentile(costs,2.5),color='r')
+    ax1.axvline(np.percentile(costs,97.5),color='r',label='95% Prediction Range')
+    ax1.legend()
+    plt.savefig("plot4.png", dpi = 300, bbox_inches='tight')
     plt.close()
 
     for i in range(len(traffic_multiplier)):
@@ -204,19 +241,56 @@ if __name__ == '__main__':
     # Plot all of the chosen routes on an interactive leaflet map
     plot_routes_advanced(routes, chosen_routes, coefficents, "routes2.html")
 
-    progress = Progress(samples * len(traffic_multiplier), "Simulating Saturdays")
+    traffic_multiplier = [1]
+    progress = Progress(samples * len(traffic_multiplier), "Simulating Saturdays without traffic")
 
+    # Calculating costs for Saturday simulation
     costs_end = simulate_weekend(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
 
     print("\nPlotting Simulation...")
 
+    # Plotting and saving simulation distributions
     plt.style.use('ggplot')
     _fig, ax1 = plt.subplots(figsize=(10, 7))
 
-    for cost in costs_end:
-        sns.distplot(cost, bins = 100, ax = ax1)
-        
-    plt.savefig("plot4.png", dpi = 300, bbox_inches='tight')
+    i = 0
+    for cost in costs:
+        labelstr = 'Traffic Multiplier: ' + str(traffic_multiplier[i])
+        sns.distplot(cost, bins = 100, ax = ax1, label=labelstr)
+        i = i + 1
+
+    ax1.set_xlabel('Cost ($)')
+    ax1.set_ylabel('Density')
+    ax1.axvline(np.percentile(costs,2.5),color='r')
+    ax1.axvline(np.percentile(costs,97.5),color='r',label='95% Prediction Range')
+    ax1.legend()
+    plt.savefig("plot5.png", dpi = 300, bbox_inches='tight')
+    plt.close()
+
+    traffic_multiplier = [1,1.2,1.4]
+    progress = Progress(samples * len(traffic_multiplier), "Simulating Saturdays with traffic")
+
+    # Calculating costs for Saturday simulation with traffic
+    costs_end = simulate_weekend(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
+
+    print("\nPlotting Simulation...")
+
+    # Plotting and saving simulation distributions
+    plt.style.use('ggplot')
+    _fig, ax1 = plt.subplots(figsize=(10, 7))
+
+    i = 0
+    for cost in costs:
+        labelstr = 'Traffic Multiplier: ' + str(traffic_multiplier[i])
+        sns.distplot(cost, bins = 100, ax = ax1, label=labelstr)
+        i = i + 1
+    
+    ax1.set_xlabel('Cost ($)')
+    ax1.set_ylabel('Density')
+    ax1.axvline(np.percentile(costs,2.5),color='r')
+    ax1.axvline(np.percentile(costs,97.5),color='r',label='95% Prediction Range')
+    ax1.legend()
+    plt.savefig("plot6.png", dpi = 300, bbox_inches='tight')
     plt.close()
 
     for i in range(len(traffic_multiplier)):
