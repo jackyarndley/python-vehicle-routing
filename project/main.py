@@ -245,7 +245,7 @@ if __name__ == '__main__':
     progress = Progress(samples * len(traffic_multiplier), "Simulating Saturdays without traffic")
 
     # Calculating costs for Saturday simulation
-    costs_end = simulate_weekend(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
+    costs = simulate_weekend(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
 
     print("\nPlotting Simulation...")
 
@@ -271,7 +271,7 @@ if __name__ == '__main__':
     progress = Progress(samples * len(traffic_multiplier), "Simulating Saturdays with traffic")
 
     # Calculating costs for Saturday simulation with traffic
-    costs_end = simulate_weekend(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
+    costs = simulate_weekend(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
 
     print("\nPlotting Simulation...")
 
@@ -294,4 +294,4 @@ if __name__ == '__main__':
     plt.close()
 
     for i in range(len(traffic_multiplier)):
-        print(f'Multiplier: {traffic_multiplier[i]:.2f}, 2.5-97.5 Cost Percentile: {np.percentile(costs_end[i], [2.5, 97.5])}')
+        print(f'Multiplier: {traffic_multiplier[i]:.2f}, 2.5-97.5 Cost Percentile: {np.percentile(costs[i], [2.5, 97.5])}')
