@@ -100,7 +100,7 @@ if __name__ == '__main__':
     plot_routes_advanced(routes, chosen_routes, coefficents, "routes1.html")
 
     samples = 2500
-    traffic_multiplier = [1.0]
+    traffic_multiplier = [1.4]
 
     progress = Progress(samples * len(traffic_multiplier), "Simulating Weekdays without traffic")
     
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     i = 0
     for cost in costs:
         labelstr = 'Traffic Multiplier: ' + str(traffic_multiplier[i])
-        sns.distplot(cost, bins = 100, ax = ax1, label=labelstr)
+        sns.distplot(cost, bins = 50, ax = ax1, label=labelstr)
         i = i + 1
 
     
@@ -128,7 +128,7 @@ if __name__ == '__main__':
     plt.savefig("plot3.png", dpi = 300, bbox_inches='tight')
     plt.close()
 
-    traffic_multiplier = [1,1.4,1.8,2.2]
+    traffic_multiplier = [1,1.2,1.4,1.6]
     progress = Progress(samples * len(traffic_multiplier), "Simulating Weekdays with traffic")
 
     # Calculating costs for weekday simulations
@@ -143,13 +143,13 @@ if __name__ == '__main__':
     i = 0
     for cost in costs:
         labelstr = 'Traffic Multiplier: ' + str(traffic_multiplier[i])
-        sns.distplot(cost, bins = 100, ax = ax1, label=labelstr)
+        sns.distplot(cost, bins = 50, ax = ax1, label=labelstr)
         i = i + 1
     
     ax1.set_xlabel('Cost ($)')
     ax1.set_ylabel('Density')
-    ax1.axvline(np.percentile(costs,2.5),color='r')
-    ax1.axvline(np.percentile(costs,97.5),color='r',label='95% Prediction Range')
+    # ax1.axvline(np.percentile(costs,2.5),color='r')
+    # ax1.axvline(np.percentile(costs,97.5),color='r',label='95% Prediction Range')
     ax1.legend()
     plt.savefig("plot4.png", dpi = 300, bbox_inches='tight')
     plt.close()
@@ -241,7 +241,7 @@ if __name__ == '__main__':
     # Plot all of the chosen routes on an interactive leaflet map
     plot_routes_advanced(routes, chosen_routes, coefficents, "routes2.html")
 
-    traffic_multiplier = [1]
+    traffic_multiplier = [1.2]
     progress = Progress(samples * len(traffic_multiplier), "Simulating Saturdays without traffic")
 
     # Calculating costs for Saturday simulation
@@ -256,7 +256,7 @@ if __name__ == '__main__':
     i = 0
     for cost in costs:
         labelstr = 'Traffic Multiplier: ' + str(traffic_multiplier[i])
-        sns.distplot(cost, bins = 100, ax = ax1, label=labelstr)
+        sns.distplot(cost, bins = 50, ax = ax1, label=labelstr)
         i = i + 1
 
     ax1.set_xlabel('Cost ($)')
@@ -282,13 +282,13 @@ if __name__ == '__main__':
     i = 0
     for cost in costs:
         labelstr = 'Traffic Multiplier: ' + str(traffic_multiplier[i])
-        sns.distplot(cost, bins = 100, ax = ax1, label=labelstr)
+        sns.distplot(cost, bins = 50, ax = ax1, label=labelstr)
         i = i + 1
     
     ax1.set_xlabel('Cost ($)')
     ax1.set_ylabel('Density')
-    ax1.axvline(np.percentile(costs,2.5),color='r')
-    ax1.axvline(np.percentile(costs,97.5),color='r',label='95% Prediction Range')
+    # ax1.axvline(np.percentile(costs,2.5),color='r')
+    # ax1.axvline(np.percentile(costs,97.5),color='r',label='95% Prediction Range')
     ax1.legend()
     plt.savefig("plot6.png", dpi = 300, bbox_inches='tight')
     plt.close()
