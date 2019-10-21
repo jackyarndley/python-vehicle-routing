@@ -119,7 +119,6 @@ if __name__ == '__main__':
         sns.distplot(cost, bins = 50, ax = ax1, label=labelstr)
         i = i + 1
 
-    
     ax1.set_xlabel('Cost ($)')
     ax1.set_ylabel('Density')
     ax1.axvline(np.percentile(costs,2.5),color='r')
@@ -148,8 +147,6 @@ if __name__ == '__main__':
     
     ax1.set_xlabel('Cost ($)')
     ax1.set_ylabel('Density')
-    # ax1.axvline(np.percentile(costs,2.5),color='r')
-    # ax1.axvline(np.percentile(costs,97.5),color='r',label='95% Prediction Range')
     ax1.legend()
     plt.savefig("plot4.png", dpi = 300, bbox_inches='tight')
     plt.close()
@@ -287,8 +284,6 @@ if __name__ == '__main__':
     
     ax1.set_xlabel('Cost ($)')
     ax1.set_ylabel('Density')
-    # ax1.axvline(np.percentile(costs,2.5),color='r')
-    # ax1.axvline(np.percentile(costs,97.5),color='r',label='95% Prediction Range')
     ax1.legend()
     plt.savefig("plot6.png", dpi = 300, bbox_inches='tight')
     plt.close()
