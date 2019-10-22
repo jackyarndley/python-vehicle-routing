@@ -102,7 +102,7 @@ if __name__ == '__main__':
     samples = 2500
     traffic_multiplier = [1.4]
 
-    progress = Progress(samples * len(traffic_multiplier), "Simulating Weekdays without traffic")
+    progress = Progress(samples * len(traffic_multiplier), "Simulating Weekdays without Traffic")
     
     # Calculating costs for weekday simulations
     costs = simulate_weekday(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
@@ -128,7 +128,7 @@ if __name__ == '__main__':
     plt.close()
 
     traffic_multiplier = [1,1.2,1.4,1.6]
-    progress = Progress(samples * len(traffic_multiplier), "Simulating Weekdays with traffic")
+    progress = Progress(samples * len(traffic_multiplier), "Simulating Weekdays with Traffic")
 
     # Calculating costs for weekday simulations
     costs = simulate_weekday(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
@@ -239,7 +239,7 @@ if __name__ == '__main__':
     plot_routes_advanced(routes, chosen_routes, coefficents, "routes2.html")
 
     traffic_multiplier = [1.2]
-    progress = Progress(samples * len(traffic_multiplier), "Simulating Saturdays without traffic")
+    progress = Progress(samples * len(traffic_multiplier), "Simulating Saturdays without Traffic")
 
     # Calculating costs for Saturday simulation
     costs = simulate_weekend(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     plt.close()
 
     traffic_multiplier = [1,1.2,1.4]
-    progress = Progress(samples * len(traffic_multiplier), "Simulating Saturdays with traffic")
+    progress = Progress(samples * len(traffic_multiplier), "Simulating Saturdays with Traffic")
 
     # Calculating costs for Saturday simulation with traffic
     costs = simulate_weekend(routes, chosen_routes, total_routes, total_chosen, samples, traffic_multiplier, progress)
